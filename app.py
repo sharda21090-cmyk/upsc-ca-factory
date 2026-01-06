@@ -20,7 +20,7 @@ if 'result' not in st.session_state:
 
 # Load webhook URL from Streamlit secrets
 try:
-    N8N_WEBHOOK_URL = st.secrets["http://136.116.132.194:5678/webhook/process-articles"]
+    N8N_WEBHOOK_URL = st.secrets["N8N_WEBHOOK_URL"]
     API_KEY = st.secrets.get("API_KEY", "")
 except Exception as e:
     st.error("⚠️ Configuration Error: Please add N8N_WEBHOOK_URL in Streamlit Cloud secrets")
