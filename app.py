@@ -18,8 +18,13 @@ if 'articles' not in st.session_state:
 if 'result' not in st.session_state:
     st.session_state.result = None
 
-# n8n webhook URL (replace with your actual webhook URL)
-N8N_WEBHOOK_URL = "https://your-n8n-instance.com/webhook/process-articles"
+# Load webhook URL from Streamlit secrets
+try:
+    N8N_WEBHOOK_URL = st.secrets["N8N_WEBHOOK_URL"]
+    API_KEY = st.secrets.get("API_KEY", "")
+except Exception as e:
+    st.error("⚠️ Configuration Error: Please add N8N_WEBHOOK_URL in Streamlit Cloud secrets")
+    st.stop()
 
 st.title("📚 UPSC Content Factory")
 st.markdown("Generate high-quality study material for UPSC preparation")
@@ -27,6 +32,8 @@ st.markdown("Generate high-quality study material for UPSC preparation")
 # Sidebar for configuration
 with st.sidebar:
     st.header("⚙️ Settings")
+    st.info(f"🔗 Connected to: {N8N_WEBHOOK_URL[:50]}...")
+    
     default_css = st.text_area(
         "Custom CSS (optional)",
         value="""
@@ -34,21 +41,31 @@ body {
     font-family: 'Georgia', serif;
     line-height: 1.8;
     color: #333;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
 }
 h1 {
     color: #2c3e50;
     border-bottom: 3px solid #3498db;
     padding-bottom: 10px;
+    margin-top: 30px;
 }
 h3 {
     color: #34495e;
-    margin-top: 20px;
+    margin-top: 25px;
+    margin-bottom: 10px;
 }
 strong {
     color: #e74c3c;
+    font-weight: 600;
 }
 ul {
-    margin-left: 20px;
+    margin-left: 25px;
+    margin-top: 10px;
+}
+li {
+    margin-bottom: 8px;
 }
         """,
         height=200
@@ -78,7 +95,7 @@ with col1:
         if input_method == "URL":
             article_url = st.text_input("Article URL*", placeholder="https://example.com/article")
         elif input_method == "Raw Text":
-            raw_text = st.text_area("Paste Article Text*", height=200)
+            raw_text = st.text_area("Paste Article Text*", height=200, placeholder="Paste your article content here...")
         else:
             uploaded_file = st.file_uploader("Upload Article Image", type=['png', 'jpg', 'jpeg'])
             if uploaded_file:
@@ -97,7 +114,7 @@ with col1:
         
         focus_keyword = st.text_input("Focus Keyword (optional)", placeholder="Main concept to focus on")
         
-        submit_button = st.form_submit_button("➕ Add Article")
+        submit_button = st.form_submit_button("➕ Add Article", use_container_width=True)
         
         if submit_button:
             # Validation
@@ -122,6 +139,7 @@ with col1:
                 }
                 st.session_state.articles.append(article)
                 st.success(f"✅ Added: {article_title}")
+                st.rerun()
 
 with col2:
     st.header("📋 Queue")
@@ -140,7 +158,7 @@ with col2:
     else:
         st.info("No articles added yet")
     
-    if st.button("🧹 Clear All", type="secondary"):
+    if st.button("🧹 Clear All", type="secondary", use_container_width=True):
         st.session_state.articles = []
         st.rerun()
 
@@ -174,20 +192,29 @@ if process_button:
                 }
             }
             
+            # Prepare headers
+            headers = {"Content-Type": "application/json"}
+            if API_KEY:
+                headers["x-api-key"] = API_KEY
+            
             # Send to n8n webhook
             response = requests.post(
                 N8N_WEBHOOK_URL,
                 json=payload,
-                timeout=300  # 5 minutes timeout
+                headers=headers,
+                timeout=300
             )
             
             if response.status_code == 200:
                 st.session_state.result = response.json()
                 st.success("✅ Processing complete!")
+                st.rerun()
             else:
-                st.error(f"❌ Error: {response.status_code} - {response.text}")
+                st.error(f"❌ Error: {response.status_code}")
+                with st.expander("See error details"):
+                    st.code(response.text)
         except requests.exceptions.Timeout:
-            st.error("⏱️ Request timed out. Please try again or reduce the number of articles.")
+            st.error("⏱️ Request timed out. Try processing fewer articles or check your n8n server.")
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
 
@@ -200,12 +227,18 @@ if st.session_state.result:
     
     # Google Doc link
     st.success(f"📄 **Study Material Created!**")
-    st.markdown(f"[🔗 Open Google Doc]({result['document_url']})")
+    st.markdown(f"### [🔗 Open Google Doc]({result['document_url']})")
     
-    st.markdown(f"**Processed:** {result['total_processed']} articles")
-    st.markdown(f"**Timestamp:** {result['timestamp']}")
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
+        st.metric("Articles Processed", result['total_processed'])
+    with col_info2:
+        st.metric("Document ID", result['document_id'][:15] + "...")
+    
+    st.caption(f"Created at: {result['timestamp']}")
     
     # Download options
+    st.markdown("---")
     st.subheader("📥 Downloads")
     
     tabs = st.tabs([f"Article {i+1}" for i in range(len(result['articles']))])
@@ -223,7 +256,8 @@ if st.session_state.result:
                     label="📄 Download Markdown",
                     data=article['markdown'],
                     file_name=f"article_{idx+1}.md",
-                    mime="text/markdown"
+                    mime="text/markdown",
+                    use_container_width=True
                 )
             
             with col_html:
@@ -232,13 +266,13 @@ if st.session_state.result:
                     label="🌐 Download HTML",
                     data=article['html'],
                     file_name=f"article_{idx+1}.html",
-                    mime="text/html"
+                    mime="text/html",
+                    use_container_width=True
                 )
             
             with col_styled:
                 # Download Styled HTML
-                styled_html = f"""
-<!DOCTYPE html>
+                styled_html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -251,13 +285,13 @@ if st.session_state.result:
 <body>
     {article['html']}
 </body>
-</html>
-                """
+</html>"""
                 st.download_button(
                     label="🎨 Download Styled HTML",
                     data=styled_html,
                     file_name=f"article_{idx+1}_styled.html",
-                    mime="text/html"
+                    mime="text/html",
+                    use_container_width=True
                 )
             
             # Preview
@@ -265,7 +299,8 @@ if st.session_state.result:
                 st.components.v1.html(article['html'], height=400, scrolling=True)
     
     # New batch button
-    if st.button("🔄 Start New Batch"):
+    st.markdown("---")
+    if st.button("🔄 Start New Batch", type="primary", use_container_width=True):
         st.session_state.articles = []
         st.session_state.result = None
         st.rerun()
