@@ -117,7 +117,6 @@ with col1:
         submit_button = st.form_submit_button("➕ Add Article", use_container_width=True)
         
         if submit_button:
-            # Validation
             if not article_title:
                 st.error("Please enter an article title")
             elif input_method == "URL" and not article_url:
@@ -127,7 +126,6 @@ with col1:
             elif input_method == "Image Upload" and not image_data:
                 st.error("Please upload an image")
             else:
-                # Add to session state
                 article = {
                     "title": article_title,
                     "url": article_url if input_method == "URL" else "",
@@ -162,7 +160,6 @@ with col2:
         st.session_state.articles = []
         st.rerun()
 
-# Process button
 st.markdown("---")
 col_process, col_status = st.columns([1, 3])
 
@@ -180,29 +177,22 @@ with col_status:
     else:
         st.warning("Add articles to get started")
 
-# Process articles
 if process_button:
     with st.spinner("🔄 Processing articles... This may take a few minutes..."):
         try:
-            # Prepare payload
             payload = {
                 "articles": st.session_state.articles,
-                "options": {
-                    "css": default_css
-                }
+                "options": {"css": default_css}
             }
-            
-            # Prepare headers
             headers = {"Content-Type": "application/json"}
             if API_KEY:
                 headers["x-api-key"] = API_KEY
             
-            # Send to n8n webhook
             response = requests.post(
                 N8N_WEBHOOK_URL,
                 json=payload,
                 headers=headers,
-                timeout=300
+                timeout=600
             )
             
             if response.status_code == 200:
@@ -213,97 +203,81 @@ if process_button:
                 st.error(f"❌ Error: {response.status_code}")
                 with st.expander("See error details"):
                     st.code(response.text)
-        except requests.exceptions.Timeout:
-            st.error("⏱️ Request timed out. Try processing fewer articles or check your n8n server.")
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
 
-# Display results
+# --- RESULTS SECTION ---
 if st.session_state.result:
     st.markdown("---")
     st.header("✨ Results")
     
     result = st.session_state.result
     
-    # Google Doc link
+    # 1. Google Doc Link handling
     st.success(f"📄 **Study Material Created!**")
-   # Use .get() to avoid crashing if the key is missing
-doc_url = result.get('url') or result.get('document_url')
-if doc_url:
-    st.markdown(f"### [🔗 Open Google Doc]({doc_url})")
-else:
-    st.error("Document URL not found in response.")
+    doc_url = result.get('url') or result.get('document_url') # Safe key checking
+    if doc_url:
+        st.markdown(f"### [🔗 Open Google Doc]({doc_url})")
+    else:
+        st.error("Document URL not found in response.")
     
+    # 2. Metrics with fallback for missing keys
     col_info1, col_info2 = st.columns(2)
     with col_info1:
-        st.metric("Articles Processed", result['total_processed'])
+        st.metric("Articles Processed", result.get('total_processed', len(result.get('articles', []))))
     with col_info2:
-        st.metric("Document ID", result['document_id'][:15] + "...")
+        doc_id = result.get('document_id', 'N/A')
+        st.metric("Document ID", f"{doc_id[:15]}..." if doc_id != 'N/A' else 'N/A')
     
-    st.caption(f"Created at: {result['timestamp']}")
+    st.caption(f"Created at: {result.get('timestamp', 'Unknown')}")
     
-    # Download options
+    # 3. Individual Article Tabs
     st.markdown("---")
     st.subheader("📥 Downloads")
     
-    tabs = st.tabs([f"Article {i+1}" for i in range(len(result['articles']))])
-    
-    for idx, (tab, article) in enumerate(zip(tabs, result['articles'])):
-        with tab:
-            st.markdown(f"### {article['title']}")
-            st.markdown(f"**Type:** {article['exam_type']}")
-            
-            col_md, col_html, col_styled = st.columns(3)
-            
-            with col_md:
-                # Download Markdown
-                st.download_button(
-                    label="📄 Download Markdown",
-                    data=article['markdown'],
-                    file_name=f"article_{idx+1}.md",
-                    mime="text/markdown",
-                    use_container_width=True
-                )
-            
-            with col_html:
-                # Download Raw HTML
-                st.download_button(
-                    label="🌐 Download HTML",
-                    data=article['html'],
-                    file_name=f"article_{idx+1}.html",
-                    mime="text/html",
-                    use_container_width=True
-                )
-            
-            with col_styled:
-                # Download Styled HTML
-                styled_html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{article['title']}</title>
-    <style>
-        {default_css}
-    </style>
-</head>
-<body>
-    {article['html']}
-</body>
-</html>"""
-                st.download_button(
-                    label="🎨 Download Styled HTML",
-                    data=styled_html,
-                    file_name=f"article_{idx+1}_styled.html",
-                    mime="text/html",
-                    use_container_width=True
-                )
-            
-            # Preview
-            with st.expander("👁️ Preview HTML"):
-                st.components.v1.html(article['html'], height=400, scrolling=True)
-    
-    # New batch button
+    articles_list = result.get('articles', [])
+    if articles_list:
+        tabs = st.tabs([f"Article {i+1}" for i in range(len(articles_list))])
+        
+        for idx, (tab, article) in enumerate(zip(tabs, articles_list)):
+            with tab:
+                st.markdown(f"### {article.get('title', 'Untitled')}")
+                st.markdown(f"**Type:** {article.get('exam_type', 'N/A')}")
+                
+                col_md, col_html, col_styled = st.columns(3)
+                
+                with col_md:
+                    st.download_button(
+                        label="📄 Download Markdown",
+                        data=article.get('markdown', ''),
+                        file_name=f"article_{idx+1}.md",
+                        mime="text/markdown",
+                        use_container_width=True
+                    )
+                
+                with col_html:
+                    st.download_button(
+                        label="🌐 Download HTML",
+                        data=article.get('html', ''),
+                        file_name=f"article_{idx+1}.html",
+                        mime="text/html",
+                        use_container_width=True
+                    )
+                
+                with col_styled:
+                    styled_html = f"<!DOCTYPE html><html><head><style>{default_css}</style></head><body>{article.get('html', '')}</body></html>"
+                    st.download_button(
+                        label="🎨 Download Styled HTML",
+                        data=styled_html,
+                        file_name=f"article_{idx+1}_styled.html",
+                        mime="text/html",
+                        use_container_width=True
+                    )
+                
+                with st.expander("👁️ Preview HTML"):
+                    st.components.v1.html(article.get('html', ''), height=400, scrolling=True)
+
+    # Reset button
     st.markdown("---")
     if st.button("🔄 Start New Batch", type="primary", use_container_width=True):
         st.session_state.articles = []
