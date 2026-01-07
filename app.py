@@ -227,7 +227,12 @@ if st.session_state.result:
     
     # Google Doc link
     st.success(f"📄 **Study Material Created!**")
-    st.markdown(f"### [🔗 Open Google Doc]({result['document_url']})")
+   # Use .get() to avoid crashing if the key is missing
+doc_url = result.get('url') or result.get('document_url')
+if doc_url:
+    st.markdown(f"### [🔗 Open Google Doc]({doc_url})")
+else:
+    st.error("Document URL not found in response.")
     
     col_info1, col_info2 = st.columns(2)
     with col_info1:
