@@ -107,9 +107,9 @@ p {
     
     # Try to load from files
     css_files = {
-        "Classic Academic": "classic_academic.css",
-        "Modern Clean": "modern_clean.css",
-        "Dark Mode Pro": "dark_mode_pro.css"
+        "Nirnay Standard": "nirnay_standard.css",
+    "Poster Style": "poster_style.css",
+    "Modern Clean": "modern_clean.css"  # This one will use fallback
     }
     
     for theme_name, filename in css_files.items():
