@@ -4,6 +4,7 @@ import base64
 from PIL import Image
 import io
 import json
+from pathlib import Path
 
 # Page configuration
 st.set_page_config(
@@ -28,55 +29,14 @@ except Exception as e:
     st.error("⚠️ Configuration Error: Please add N8N_WEBHOOK_URL in Streamlit Cloud secrets")
     st.stop()
 
-# === CSS THEMES ===
-CSS_THEMES = {
-    "Classic Academic": """
-body {
-    font-family: 'Georgia', serif;
-    line-height: 1.8;
-    color: #2c3e50;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 30px;
-    background: #fafafa;
-}
-h1 {
-    color: #1a1a1a;
-    border-bottom: 3px solid #8b4513;
-    padding-bottom: 12px;
-    margin-top: 35px;
-    font-size: 2.2em;
-}
-h2 {
-    color: #333;
-    margin-top: 28px;
-    font-size: 1.6em;
-    border-left: 4px solid #8b4513;
-    padding-left: 15px;
-}
-h3 {
-    color: #555;
-    margin-top: 22px;
-    font-size: 1.3em;
-}
-strong {
-    color: #c0392b;
-    font-weight: 600;
-}
-ul {
-    margin-left: 30px;
-    margin-top: 12px;
-}
-li {
-    margin-bottom: 10px;
-    line-height: 1.6;
-}
-p {
-    margin-bottom: 15px;
-}
-    """,
+# === LOAD CSS THEMES FROM FILES ===
+def load_css_themes():
+    """Load CSS themes from styles/ directory"""
+    themes = {}
+    styles_dir = Path(__file__).parent / "styles"
     
-    "Modern Clean": """
+    # Fallback: Default Modern Clean theme (hardcoded)
+    default_theme = """
 body {
     font-family: 'Inter', 'Segoe UI', sans-serif;
     line-height: 1.7;
@@ -92,20 +52,17 @@ h1 {
     margin-top: 40px;
     margin-bottom: 20px;
     font-size: 2.5em;
-    letter-spacing: -0.5px;
 }
 h2 {
     color: #334155;
     font-weight: 600;
     margin-top: 32px;
-    margin-bottom: 16px;
     font-size: 1.75em;
 }
 h3 {
     color: #475569;
     font-weight: 600;
     margin-top: 24px;
-    margin-bottom: 12px;
     font-size: 1.35em;
 }
 strong {
@@ -117,78 +74,66 @@ strong {
 }
 ul {
     margin-left: 25px;
-    margin-top: 10px;
 }
 li {
     margin-bottom: 8px;
-    padding-left: 8px;
 }
 p {
     margin-bottom: 14px;
 }
-    """,
-    
-    "Dark Mode Pro": """
-body {
-    font-family: 'SF Pro', 'Helvetica Neue', sans-serif;
-    line-height: 1.75;
-    color: #e2e8f0;
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 35px;
-    background: #0f172a;
+.article-header {
+    margin-bottom: 35px;
 }
-h1 {
-    color: #f1f5f9;
-    font-weight: 700;
-    margin-top: 38px;
+.exam-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
     margin-bottom: 18px;
-    font-size: 2.4em;
-    border-bottom: 2px solid #3b82f6;
-    padding-bottom: 14px;
 }
-h2 {
-    color: #cbd5e1;
-    font-weight: 600;
-    margin-top: 30px;
-    margin-bottom: 14px;
-    font-size: 1.7em;
+.meta {
+    color: #64748b;
+    font-size: 0.95em;
+    margin-top: 12px;
 }
-h3 {
-    color: #94a3b8;
-    font-weight: 600;
-    margin-top: 26px;
-    margin-bottom: 10px;
-    font-size: 1.4em;
-}
-strong {
-    color: #fbbf24;
-    font-weight: 600;
-    background: rgba(251, 191, 36, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-ul {
-    margin-left: 28px;
-    margin-top: 11px;
-}
-li {
-    margin-bottom: 9px;
-    color: #cbd5e1;
-}
-p {
-    margin-bottom: 15px;
-    color: #e2e8f0;
-}
-a {
-    color: #60a5fa;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
+.divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 30px 0;
 }
     """
-}
+    
+    # Try to load from files
+    css_files = {
+        "Classic Academic": "classic_academic.css",
+        "Modern Clean": "modern_clean.css",
+        "Dark Mode Pro": "dark_mode_pro.css"
+    }
+    
+    for theme_name, filename in css_files.items():
+        css_path = styles_dir / filename
+        try:
+            if css_path.exists():
+                with open(css_path, 'r', encoding='utf-8') as f:
+                    themes[theme_name] = f.read()
+            else:
+                # Use default if file not found
+                if theme_name == "Modern Clean":
+                    themes[theme_name] = default_theme
+        except Exception as e:
+            # Fallback to default for all themes if loading fails
+            if theme_name == "Modern Clean":
+                themes[theme_name] = default_theme
+    
+    # Ensure at least one theme exists
+    if not themes:
+        themes["Modern Clean"] = default_theme
+    
+    return themes
+
+CSS_THEMES = load_css_themes()
 
 st.title("📚 UPSC Content Factory")
 st.markdown("Generate high-quality study material for UPSC preparation")
@@ -198,7 +143,8 @@ with st.sidebar:
     st.header("⚙️ Settings")
     st.info(f"🔗 Connected to n8n workflow")
     st.markdown("---")
-    st.caption("💡 CSS themes are pre-configured. Select your theme in the results section after processing.")
+    st.caption("💡 CSS themes loaded from styles/ directory")
+    st.caption(f"Available themes: {len(CSS_THEMES)}")
 
 # Main content area
 col1, col2 = st.columns([2, 1])
@@ -376,7 +322,7 @@ if st.session_state.result:
             selected_theme = st.selectbox(
                 "🎨 Select CSS Theme:",
                 options=list(CSS_THEMES.keys()),
-                index=list(CSS_THEMES.keys()).index(st.session_state.selected_css_theme),
+                index=list(CSS_THEMES.keys()).index(st.session_state.selected_css_theme) if st.session_state.selected_css_theme in CSS_THEMES else 0,
                 key="theme_selector"
             )
             st.session_state.selected_css_theme = selected_theme
@@ -387,24 +333,41 @@ if st.session_state.result:
             
             # Generate styled HTML
             article = articles_list[selected_article_idx]
-            html_content = article.get('html', '<p>No HTML content available</p>')
-            styled_html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>{CSS_THEMES[selected_theme]}</style>
-            </head>
-            <body>
-                {html_content}
-            </body>
-            </html>
-            """
             
-            # Live Preview
-            st.components.v1.html(styled_html, height=600, scrolling=True)
+            # DEBUG: Show available keys
+            with st.expander("🔍 Debug: Workflow Response"):
+                st.json({
+                    "available_keys": list(article.keys()),
+                    "has_html": 'html' in article,
+                    "html_value": article.get('html', 'NOT_FOUND')[:200] if article.get('html') else 'EMPTY/NONE',
+                    "has_htmlGenerated": article.get('htmlGenerated', False),
+                    "has_markdown": bool(article.get('markdown')),
+                    "markdown_length": len(article.get('markdown', ''))
+                })
+            
+            html_content = article.get('html', '')
+            
+            if not html_content:
+                st.warning("⚠️ HTML content is empty! Check the workflow's 'Convert to HTML' node.")
+                st.info("The 'html' field should be populated by the 'Convert to HTML' node in the n8n workflow.")
+            else:
+                styled_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>{CSS_THEMES[selected_theme]}</style>
+                </head>
+                <body>
+                    {html_content}
+                </body>
+                </html>
+                """
+                
+                # Live Preview
+                st.components.v1.html(styled_html, height=600, scrolling=True)
         else:
-            st.info("No HTML content available for preview")
+            st.info("No articles in result")
     
     # === DOWNLOADS SECTION ===
     st.markdown("---")
