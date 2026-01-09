@@ -1,0 +1,148 @@
+/* =====================================================
+   POSTER RENDERER — 1200 × 1500 px
+===================================================== */
+@page {
+    size: 1200px 1500px;
+    margin: 0;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #0b1e3b;
+}
+
+/* ---------- POSTER ROOT ---------- */
+.poster {
+    width: 1200px;
+    height: 1500px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+/* ---------- TOP BLUE RIBBON ---------- */
+.poster::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 110px;
+
+    background: #062a63;
+    border-bottom-left-radius: 36px;
+    border-bottom-right-radius: 36px;
+
+    z-index: 0;
+}
+
+/* ---------- LOGO (FIXED RENDERING) ---------- */
+.poster-logo {
+    position: absolute;
+    top: 14px;
+    right: 26px;
+
+    width: 96px;
+    height: auto;
+
+    background: #ffffff;
+    padding: 6px;
+    border-radius: 14px;
+
+    z-index: 3;
+}
+
+/* =====================================================
+   TYPOGRAPHY RULES (HARD LOCK)
+===================================================== */
+
+/* ---- H1: ALWAYS NEW PAGE ---- */
+.poster h1 {
+    page-break-before: always;
+    /* print engines */
+    break-before: page;
+    /* modern engines */
+
+    margin: 140px 70px 30px 70px;
+    padding: 26px 42px;
+
+    background: #062a63;
+    color: #ffffff;
+
+    border-radius: 999px;
+    text-align: center;
+
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 35px;
+    /* HARD RULE */
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+/* ---------- CONTENT ---------- */
+.poster-content {
+    padding: 0 70px;
+    font-family: "Edu SA Beginner", cursive;
+}
+
+/* ---- H2 / H3 ---- */
+.poster h2,
+.poster h3 {
+    display: inline-block;
+
+    margin: 22px 0 12px;
+    padding: 8px 18px;
+
+    background: #d21f26;
+    color: #ffffff;
+
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 28px;
+    /* HARD RULE */
+    font-weight: 700;
+    line-height: 1.2;
+
+    border-radius: 3px;
+}
+
+/* ---- NORMAL TEXT ---- */
+.poster p,
+.poster li {
+    font-size: 25px;
+    /* HARD RULE */
+    line-height: 1.55;
+    margin: 0 0 12px 0;
+}
+
+.poster strong {
+    font-weight: 600;
+}
+
+/* ---------- LISTS ---------- */
+.poster ul {
+    margin: 8px 0 16px 28px;
+    padding: 0;
+}
+
+/* ---------- IMAGES ---------- */
+.poster-figure {
+    margin: 20px 0 28px;
+    text-align: center;
+}
+
+.poster-figure img {
+    max-width: 100%;
+    max-height: 520px;
+
+    height: auto;
+    object-fit: contain;
+
+    border: 3px solid #000;
+    padding: 8px;
+    background: #ffffff;
+}
