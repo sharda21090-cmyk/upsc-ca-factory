@@ -146,6 +146,83 @@ p {
 
 CSS_THEMES = load_css_themes()
 
+# === POST-PROCESS HTML FOR NIRNAY CSS ===
+def process_html_for_nirnay(html_content):
+    """
+    Post-process HTML to add colorbox wrappers for Nirnay CSS
+    Detects numbered sections and wraps them appropriately
+    """
+    from bs4 import BeautifulSoup
+    
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Section number to colorbox class mapping
+    section_map = {
+        '1': 'syllabus',
+        '2': 'context',
+        '4': 'beyond',
+        '5': 'prelims',
+        '6': 'mains'
+    }
+    
+    # Find all headings
+    headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5'])
+    
+    # Track if we've seen H1 (to remove duplicate)
+    seen_h1 = False
+    
+    for heading in headings:
+        text = heading.get_text(strip=True)
+        
+        # Remove duplicate H1 (keep only first)
+        if heading.name == 'h1':
+            if seen_h1:
+                heading.decompose()
+                continue
+            seen_h1 = True
+        
+        # Check if heading starts with section number (e.g., "1. Syllabus")
+        import re
+        match = re.match(r'^(\d+)\.\s+(.+)$', text)
+        
+        if match and match.group(1) in section_map:
+            section_num = match.group(1)
+            section_name = match.group(2)
+            colorbox_class = section_map[section_num]
+            
+            # Update heading text (remove number)
+            heading.string = section_name
+            
+            # Create colorbox wrapper
+            colorbox = soup.new_tag('div', **{'class': f'colorbox {colorbox_class}'})
+            
+            # Insert colorbox before heading
+            heading.insert_before(colorbox)
+            
+            # Move heading into colorbox
+            colorbox.append(heading.extract())
+            
+            # Move all following siblings into colorbox until next heading or section
+            current = colorbox.next_sibling
+            while current:
+                # Stop if we hit another heading
+                if current.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                    break
+                
+                # Stop if we hit another colorbox
+                if current.name == 'div' and current.get('class') and 'colorbox' in current.get('class', []):
+                    break
+                
+                next_sibling = current.next_sibling
+                
+                # Move element into colorbox
+                if current.name:  # Skip text nodes
+                    colorbox.append(current.extract())
+                
+                current = next_sibling
+    
+    return str(soup)
+
 st.title("📚 UPSC Content Factory")
 st.markdown("Generate high-quality study material for UPSC preparation")
 
@@ -368,6 +445,10 @@ if st.session_state.result:
                 st.warning("⚠️ HTML content is empty! Check the workflow's 'Convert to HTML' node.")
                 st.info("The 'html' field should be populated by the 'Convert to HTML' node in the n8n workflow.")
             else:
+                # Post-process HTML for Nirnay styling
+                if selected_theme == "Nirnay Standard":
+                    html_content = process_html_for_nirnay(html_content)
+                
                 # Wrap HTML based on selected theme
                 if selected_theme == "Nirnay Standard":
                     wrapped_html = f"""
@@ -448,6 +529,11 @@ if st.session_state.result:
                     with theme_cols[theme_idx]:
                         # Wrap HTML based on theme
                         raw_html = article.get('html', '')
+                        
+                        # Post-process for Nirnay
+                        if theme_name == "Nirnay Standard":
+                            raw_html = process_html_for_nirnay(raw_html)
+                        
                         if theme_name == "Nirnay Standard":
                             body_html = f"""<div class="page"><article class="book"><div class="prose">{raw_html}</div></article></div>"""
                         elif theme_name == "Poster Style":
