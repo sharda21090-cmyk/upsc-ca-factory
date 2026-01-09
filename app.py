@@ -33,7 +33,11 @@ except Exception as e:
 def load_css_themes():
     """Load CSS themes from styles/ directory"""
     themes = {}
+    debug_info = []
     styles_dir = Path(__file__).parent / "styles"
+    
+    debug_info.append(f"📁 Looking in: {styles_dir}")
+    debug_info.append(f"📁 Exists: {styles_dir.exists()}")
     
     # Fallback: Default Modern Clean theme (hardcoded)
     default_theme = """
@@ -108,8 +112,8 @@ p {
     # Try to load from files
     css_files = {
         "Nirnay Standard": "nirnay_standard.css",
-    "Poster Style": "poster_style.css",
-    "Modern Clean": "modern_clean.css"  # This one will use fallback
+        "Poster Style": "poster_style.css",
+        "Modern Clean": "modern_clean.css"
     }
     
     for theme_name, filename in css_files.items():
@@ -117,19 +121,26 @@ p {
         try:
             if css_path.exists():
                 with open(css_path, 'r', encoding='utf-8') as f:
-                    themes[theme_name] = f.read()
+                    content = f.read()
+                    themes[theme_name] = content
+                    debug_info.append(f"✅ {filename}: {len(content)} chars")
             else:
-                # Use default if file not found
+                debug_info.append(f"❌ {filename}: NOT FOUND")
                 if theme_name == "Modern Clean":
                     themes[theme_name] = default_theme
+                    debug_info.append(f"   Using fallback for {theme_name}")
         except Exception as e:
-            # Fallback to default for all themes if loading fails
+            debug_info.append(f"⚠️ {filename}: ERROR - {str(e)}")
             if theme_name == "Modern Clean":
                 themes[theme_name] = default_theme
     
     # Ensure at least one theme exists
     if not themes:
         themes["Modern Clean"] = default_theme
+        debug_info.append("Using fallback only")
+    
+    # Store debug info globally
+    st.session_state.css_debug = debug_info
     
     return themes
 
@@ -145,6 +156,12 @@ with st.sidebar:
     st.markdown("---")
     st.caption("💡 CSS themes loaded from styles/ directory")
     st.caption(f"Available themes: {len(CSS_THEMES)}")
+    
+    # Debug info
+    if 'css_debug' in st.session_state:
+        with st.expander("🔍 CSS Debug Info"):
+            for info in st.session_state.css_debug:
+                st.text(info)
 
 # Main content area
 col1, col2 = st.columns([2, 1])
