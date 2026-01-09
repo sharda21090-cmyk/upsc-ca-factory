@@ -368,6 +368,29 @@ if st.session_state.result:
                 st.warning("⚠️ HTML content is empty! Check the workflow's 'Convert to HTML' node.")
                 st.info("The 'html' field should be populated by the 'Convert to HTML' node in the n8n workflow.")
             else:
+                # Wrap HTML based on selected theme
+                if selected_theme == "Nirnay Standard":
+                    wrapped_html = f"""
+                    <div class="page">
+                      <article class="book">
+                        <div class="prose">
+                          {html_content}
+                        </div>
+                      </article>
+                    </div>
+                    """
+                elif selected_theme == "Poster Style":
+                    wrapped_html = f"""
+                    <section class="poster">
+                      <div class="poster-content">
+                        {html_content}
+                      </div>
+                    </section>
+                    """
+                else:
+                    # Modern Clean and others - no wrapper needed
+                    wrapped_html = html_content
+                
                 styled_html = f"""
                 <!DOCTYPE html>
                 <html>
@@ -376,7 +399,7 @@ if st.session_state.result:
                     <style>{CSS_THEMES[selected_theme]}</style>
                 </head>
                 <body>
-                    {html_content}
+                    {wrapped_html}
                 </body>
                 </html>
                 """
@@ -423,6 +446,15 @@ if st.session_state.result:
                 theme_cols = st.columns(3)
                 for theme_idx, (theme_name, theme_css) in enumerate(CSS_THEMES.items()):
                     with theme_cols[theme_idx]:
+                        # Wrap HTML based on theme
+                        raw_html = article.get('html', '')
+                        if theme_name == "Nirnay Standard":
+                            body_html = f"""<div class="page"><article class="book"><div class="prose">{raw_html}</div></article></div>"""
+                        elif theme_name == "Poster Style":
+                            body_html = f"""<section class="poster"><div class="poster-content">{raw_html}</div></section>"""
+                        else:
+                            body_html = raw_html
+                        
                         styled_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -432,7 +464,7 @@ if st.session_state.result:
     <style>{theme_css}</style>
 </head>
 <body>
-{article.get('html', '')}
+{body_html}
 </body>
 </html>"""
                         st.download_button(
