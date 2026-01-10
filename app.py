@@ -229,7 +229,7 @@ st.markdown("Generate high-quality study material for UPSC preparation")
 # Sidebar
 with st.sidebar:
     st.header("⚙️ Settings")
-    st.info(f"🔗 Connected to n8n workflow")
+    st.info(f"🔗 Complete CA workflow Automation")
     st.markdown("---")
     st.caption("💡 CSS themes loaded from styles/ directory")
     st.caption(f"Available themes: {len(CSS_THEMES)}")
