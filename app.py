@@ -224,120 +224,126 @@ st.markdown("""
 # MAIN CONTENT
 # ===========================================
 
-if not st.session_state.result:
-    # Input Section
-    st.markdown('<div class="section-header"><h3>📝 Add Articles</h3></div>', unsafe_allow_html=True)
+# Always show Article Input and Queue (removed if/else Result toggle)
+st.markdown('<div class="section-header"><h3>📝 Add Articles</h3></div>', unsafe_allow_html=True)
+
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    # Input Method Selection (Outside Form for Instant Updates)
+    input_method = st.radio("Input Method:", ["URL", "Text", "Image"], horizontal=True)
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        with st.form(key='article_form', clear_on_submit=True):
-            article_title = st.text_input("📌 Article Title", placeholder="Enter title...")
-            
-            input_method = st.radio("Input Method:", ["URL", "Text", "Image"], horizontal=True)
-            
-            article_url = ""
-            raw_text = ""
-            image_data = ""
-            
-            if input_method == "URL":
-                article_url = st.text_input("🔗 URL", placeholder="https://...")
-            elif input_method == "Text":
-                raw_text = st.text_area("📄 Content", height=150, placeholder="Paste article text...")
-            else:
-                uploaded_file = st.file_uploader("📸 Upload Image", type=['png', 'jpg', 'jpeg'])
-                if uploaded_file:
-                    image = Image.open(uploaded_file)
-                    st.image(image, width=300)
-                    buffered = io.BytesIO()
-                    image.save(buffered, format="JPEG")
-                    image_data = base64.b64encode(buffered.getvalue()).decode()
-            
-            col_a, col_b = st.columns(2)
-            with col_a:
-                exam_type = st.selectbox("📖 Exam", ["Prelims", "Mains"])
-            with col_b:
-                subject = st.text_input("📚 Subject", placeholder="e.g., Polity")
-            
-            submitted = st.form_submit_button("➕ Add to Queue", type="primary", use_container_width=True)
-            
-            if submitted:
-                if not article_title:
-                    st.error("Please enter a title")
-                elif input_method == "URL" and not article_url:
-                    st.error("Please enter a URL")
-                elif input_method == "Text" and not raw_text:
-                    st.error("Please paste text")
-                elif input_method == "Image" and not image_data:
-                    st.error("Please upload an image")
-                else:
-                    st.session_state.articles.append({
-                        "title": article_title,
-                        "url": article_url if input_method == "URL" else "",
-                        "raw_text": raw_text if input_method == "Text" else "",
-                        "image_data": image_data if input_method == "Image" else "",
-                        "exam_type": exam_type,
-                        "subject": subject or "General",
-                        "focus_keyword": article_title
-                    })
-                    st.success(f"✅ Added: {article_title}")
-                    st.rerun()
-    
-    with col2:
-        st.markdown(f"**📋 Queue ({len(st.session_state.articles)})**")
+    with st.form(key='article_form', clear_on_submit=False): # Changed to False to persist data
+        article_title = st.text_input("📌 Article Title", placeholder="Enter title...")
         
-        if st.session_state.articles:
-            for idx, article in enumerate(st.session_state.articles):
-                badge = "badge-prelims" if article['exam_type'] == "Prelims" else "badge-mains"
-                input_type = "URL" if article['url'] else ("Text" if article['raw_text'] else "Image")
-                
-                st.markdown(f"""
-                <div class="queue-item">
-                    <div><strong>{idx + 1}. {article['title'][:35]}...</strong></div>
-                    <div style="margin-top: 0.5rem;">
-                        <span class="badge {badge}">{article['exam_type']}</span>
-                        <span style="font-size: 0.85rem; color: #64748b;">{article['subject']} • {input_type}</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("🗑️", key=f"del_{idx}"):
-                    st.session_state.articles.pop(idx)
-                    st.rerun()
-            
-            if st.button("🧹 Clear All", type="secondary", use_container_width=True):
-                st.session_state.articles = []
-                st.rerun()
+        article_url = ""
+        raw_text = ""
+        image_data = ""
+        
+        # Inputs based on selection
+        if input_method == "URL":
+            article_url = st.text_input("🔗 URL", placeholder="https://...")
+        elif input_method == "Text":
+            raw_text = st.text_area("📄 Content", height=150, placeholder="Paste article text...")
         else:
-            st.info("No articles added yet")
-    
-    # Process button
-    st.markdown("---")
+            uploaded_file = st.file_uploader("📸 Upload Image", type=['png', 'jpg', 'jpeg'])
+            if uploaded_file:
+                image = Image.open(uploaded_file)
+                st.image(image, width=300)
+                buffered = io.BytesIO()
+                image.save(buffered, format="JPEG")
+                image_data = base64.b64encode(buffered.getvalue()).decode()
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            exam_type = st.selectbox("📖 Exam", ["Prelims", "Mains"])
+        with col_b:
+            subject = st.text_input("📚 Subject", placeholder="e.g., Polity")
+        
+        focus_keyword = st.text_input("🎯 Focus Keyword (Optional)", placeholder="Main topic or concept to emphasize...")
+        
+        submitted = st.form_submit_button("➕ Add to Queue", type="primary", use_container_width=True)
+        
+        if submitted:
+            if not article_title:
+                st.error("Please enter a title")
+            elif input_method == "URL" and not article_url:
+                st.error("Please enter a URL")
+            elif input_method == "Text" and not raw_text:
+                st.error("Please paste text")
+            elif input_method == "Image" and not image_data:
+                st.error("Please upload an image")
+            else:
+                st.session_state.articles.append({
+                    "title": article_title,
+                    "url": article_url if input_method == "URL" else "",
+                    "raw_text": raw_text if input_method == "Text" else "",
+                    "image_data": image_data if input_method == "Image" else "",
+                    "exam_type": exam_type,
+                    "subject": subject or "General",
+                    "focus_keyword": focus_keyword or article_title
+                })
+                st.success(f"✅ Added: {article_title}")
+                st.rerun()
+
+with col2:
+    st.markdown(f"**📋 Queue ({len(st.session_state.articles)})**")
     
     if st.session_state.articles:
-        if st.button(f"🚀 Process {len(st.session_state.articles)} Article(s)", type="primary", use_container_width=True):
-            with st.spinner("⏳ Processing..."):
-                try:
-                    response = requests.post(
-                        N8N_WEBHOOK_URL,
-                        json={"articles": st.session_state.articles},
-                        headers={"Content-Type": "application/json", "x-api-key": API_KEY} if API_KEY else {"Content-Type": "application/json"},
-                        timeout=600
-                    )
-                    
-                    if response.status_code == 200:
-                        st.session_state.result = response.json()
-                        st.success("✅ Complete!")
-                        st.rerun()
-                    else:
-                        st.error(f"❌ Error {response.status_code}")
-                except Exception as e:
-                    st.error(f"❌ {str(e)}")
+        for idx, article in enumerate(st.session_state.articles):
+            badge = "badge-prelims" if article['exam_type'] == "Prelims" else "badge-mains"
+            input_type = "URL" if article['url'] else ("Text" if article['raw_text'] else "Image")
+            
+            st.markdown(f"""
+            <div class="queue-item">
+                <div><strong>{idx + 1}. {article['title'][:35]}...</strong></div>
+                <div style="margin-top: 0.5rem;">
+                    <span class="badge {badge}">{article['exam_type']}</span>
+                    <span style="font-size: 0.85rem; color: #64748b;">{article['subject']} • {input_type}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🗑️", key=f"del_{idx}"):
+                st.session_state.articles.pop(idx)
+                st.rerun()
+        
+        if st.button("🧹 Clear All", type="secondary", use_container_width=True):
+            st.session_state.articles = []
+            st.rerun()
     else:
-        st.info("Add articles to get started")
+        st.info("No articles added yet")
 
+# Process button
+st.markdown("---")
+
+if st.session_state.articles:
+    if st.button(f"🚀 Process {len(st.session_state.articles)} Article(s)", type="primary", use_container_width=True):
+        with st.spinner("⏳ Processing..."):
+            try:
+                response = requests.post(
+                    N8N_WEBHOOK_URL,
+                    json={"articles": st.session_state.articles},
+                    headers={"Content-Type": "application/json", "x-api-key": API_KEY} if API_KEY else {"Content-Type": "application/json"},
+                    timeout=600
+                )
+                
+                if response.status_code == 200:
+                    st.session_state.result = response.json()
+                    st.success("✅ Complete!")
+                    st.rerun()
+                else:
+                    st.error(f"❌ Error {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ {str(e)}")
 else:
-    # Results section
+    st.info("Add articles to get started")
+
+# Results section (Always rendered if results exist)
+if st.session_state.result:
+    st.markdown("---")
+    st.markdown('<div class="section-header"><h3>✨ Processing Results</h3></div>', unsafe_allow_html=True)
+    
     result = st.session_state.result
     doc_url = result.get('url') or result.get('document_url')
     
@@ -445,7 +451,7 @@ else:
     
     # Reset
     st.markdown("---")
-    if st.button("🔄 New Batch", type="primary", use_container_width=True):
+    if st.button("🔄 New Batch (Clear Results)", type="primary", use_container_width=True):
         st.session_state.articles = []
         st.session_state.result = None
         st.rerun()
