@@ -388,7 +388,25 @@ if st.session_state.result:
                     html_content = process_html_for_A4(html_content)
                     wrapped_html = f'<div class="page"><article class="book"><div class="prose">{html_content}</div></article></div>'
                 elif selected_theme == "Poster Style":
-                    wrapped_html = f'<section class="poster"><div class="print-header"></div><div class="poster-content">{html_content}</div></section>'
+                    # Clean up content for Poster (Preview matches Download)
+                    try:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(html_content, 'html.parser')
+                        h1s = soup.find_all('h1')
+                        if len(h1s) > 1:
+                            for i, h1 in enumerate(h1s):
+                                if i > 0: 
+                                    h1.name = 'h2'
+                        clean_html = str(soup)
+                    except:
+                        clean_html = html_content
+                    
+                    wrapped_html = f'''<section class="poster">
+  <div class="print-header"></div>
+  <div class="poster-content">
+    {clean_html}
+  </div>
+</section>'''
                 else:
                     wrapped_html = html_content
                 
@@ -432,7 +450,29 @@ if st.session_state.result:
                             raw_html = process_html_for_A4(raw_html)
                             body_html = f'<div class="page"><article class="book"><div class="prose">{raw_html}</div></article></div>'
                         elif theme_name == "Poster Style":
-                            body_html = f'<section class="poster"><div class="print-header"></div><div class="poster-content">{raw_html}</div></section>'
+                            # Clean up content for Poster
+                            try:
+                                from bs4 import BeautifulSoup
+                                soup = BeautifulSoup(raw_html, 'html.parser')
+                                
+                                # Downgrade subsequent H1s to H2s to avoid double-title look
+                                h1s = soup.find_all('h1')
+                                if len(h1s) > 1:
+                                    for i, h1 in enumerate(h1s):
+                                        if i > 0: # Keep only the first H1
+                                            h1.name = 'h2'
+                                
+                                clean_html = str(soup)
+                            except:
+                                clean_html = raw_html
+                                
+                            # Restored print-header with empty badge as per user request
+                            body_html = f'''<section class="poster">
+  <div class="print-header"></div>
+  <div class="poster-content">
+    {clean_html}
+  </div>
+</section>'''
                         else:
                             body_html = raw_html
                         
