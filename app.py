@@ -111,7 +111,7 @@ p {
     
     # Try to load from files
     css_files = {
-        "Nirnay Standard": "nirnay_standard.css",
+        "A4 Standard": "A4_standard.css",
         "Poster Style": "poster_style.css",
         "Modern Clean": "modern_clean.css"
     }
@@ -146,10 +146,10 @@ p {
 
 CSS_THEMES = load_css_themes()
 
-# === POST-PROCESS HTML FOR NIRNAY CSS ===
-def process_html_for_nirnay(html_content):
+# === POST-PROCESS HTML FOR A4 CSS ===
+def process_html_for_A4(html_content):
     """
-    Post-process HTML to add colorbox wrappers for Nirnay CSS
+    Post-process HTML to add colorbox wrappers for A4 CSS
     Detects numbered sections and wraps them appropriately
     """
     from bs4 import BeautifulSoup
@@ -445,12 +445,12 @@ if st.session_state.result:
                 st.warning("⚠️ HTML content is empty! Check the workflow's 'Convert to HTML' node.")
                 st.info("The 'html' field should be populated by the 'Convert to HTML' node in the n8n workflow.")
             else:
-                # Post-process HTML for Nirnay styling
-                if selected_theme == "Nirnay Standard":
-                    html_content = process_html_for_nirnay(html_content)
+                # Post-process HTML for A4 styling
+                if selected_theme == "A4 Standard":
+                    html_content = process_html_for_A4(html_content)
                 
                 # Wrap HTML based on selected theme
-                if selected_theme == "Nirnay Standard":
+                if selected_theme == "A4 Standard":
                     wrapped_html = f"""
                     <div class="page">
                       <article class="book">
@@ -530,11 +530,11 @@ if st.session_state.result:
                         # Wrap HTML based on theme
                         raw_html = article.get('html', '')
                         
-                        # Post-process for Nirnay
-                        if theme_name == "Nirnay Standard":
-                            raw_html = process_html_for_nirnay(raw_html)
+                        # Post-process for A4
+                        if theme_name == "A4 Standard":
+                            raw_html = process_html_for_A4(raw_html)
                         
-                        if theme_name == "Nirnay Standard":
+                        if theme_name == "A4 Standard":
                             body_html = f"""<div class="page"><article class="book"><div class="prose">{raw_html}</div></article></div>"""
                         elif theme_name == "Poster Style":
                             body_html = f"""<section class="poster"><div class="poster-content">{raw_html}</div></section>"""
