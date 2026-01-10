@@ -616,7 +616,12 @@ else:
                     html_content = process_html_for_A4(html_content)
                     wrapped_html = f'<div class="page"><article class="book"><div class="prose">{html_content}</div></article></div>'
                 elif selected_theme == "Poster Style":
-                    wrapped_html = f'<section class="poster"><div class="poster-content">{html_content}</div></section>'
+                    wrapped_html = f'''<section class="poster">
+  <div class="print-header"></div>
+  <div class="poster-content">
+    {html_content}
+  </div>
+</section>'''
                 else:
                     wrapped_html = html_content
                 
@@ -674,7 +679,12 @@ else:
                             raw_html = process_html_for_A4(raw_html)
                             body_html = f'<div class="page"><article class="book"><div class="prose">{raw_html}</div></article></div>'
                         elif theme_name == "Poster Style":
-                            body_html = f'<section class="poster"><div class="poster-content">{raw_html}</div></section>'
+                            body_html = f'''<section class="poster">
+  <div class="print-header"></div>
+  <div class="poster-content">
+    {raw_html}
+  </div>
+</section>'''
                         else:
                             body_html = raw_html
                         
