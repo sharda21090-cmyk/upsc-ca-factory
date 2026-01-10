@@ -35,7 +35,6 @@ body {
 .print-header {
     position: fixed;
     top: -110px;
-    /* ← CRITICAL FIX */
     left: 0;
 
     width: 100%;
@@ -47,6 +46,8 @@ body {
 
     z-index: 10;
 }
+
+
 
 /* =====================================================
    TYPOGRAPHY
