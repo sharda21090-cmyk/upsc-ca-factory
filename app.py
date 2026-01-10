@@ -396,7 +396,7 @@ if st.session_state.result:
                         if len(h1s) > 1:
                             for i, h1 in enumerate(h1s):
                                 if i > 0: 
-                                    h1.name = 'h2'
+                                    h1.decompose() # Remove duplicate H1s entirely
                         clean_html = str(soup)
                     except:
                         clean_html = html_content
@@ -460,7 +460,7 @@ if st.session_state.result:
                                 if len(h1s) > 1:
                                     for i, h1 in enumerate(h1s):
                                         if i > 0: # Keep only the first H1
-                                            h1.name = 'h2'
+                                            h1.decompose() # Remove duplicate H1s entirely
                                 
                                 clean_html = str(soup)
                             except:
